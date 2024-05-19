@@ -8,9 +8,14 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
@@ -30,156 +35,154 @@ public class CadastroEleitoral {
         // TODO code application logic here
         
         List<Pessoa> pessoas = new ArrayList<>();
-        Cpfs<Integer> lista_de_cpfs = new Cpfs<>();
-        List<Eleitor> eleitores = new ArrayList<>();
         
+        Map<String, Eleitor> eleitores = new HashMap<>();        
         
-        pessoas.add(new Pessoa("Robert De Niro", "090.088.774-57", "17/08/1943", "rua não sei o que", "23", "Lagoa Nova", "59075810", "Natal", "RN"));
-        pessoas.add(new Pessoa("Fulano", "090.088.774-57", "17/08/1943", "rua nãoseioque", "23", "Lagoa Nova", "59075810", "Parnamirim", "RN"));
+        pessoas.add(new Pessoa("Harry Potter", "838.084.030-55", "31/07/1980", "Natal", "RN"));
+        pessoas.add(new Pessoa("Walter White", "689111720-81", "07/09/1958", "Parnamirim", "RN"));
+        pessoas.add(new Pessoa("Harvey Specter", "976.009.930-66", "22/01/1972", "Parnamirim", "RN"));
+        pessoas.add(new Pessoa("Elaine Bennes", "859.273.820-29", "14/05/1975", "Macaiba", "RN"));
+        pessoas.add(new Pessoa("Hermione Granger", "67798083006", "19/09/1979", "Natal", "RN"));
+        pessoas.add(new Pessoa("Chandler Bing", "151.285.97024", "18/10/1967", "Parnamirim", "RN"));
+        pessoas.add(new Pessoa("Sheldon Cooper", "151.285.970-23", "26/02/1980", "Natal", "RN")); //CPF inválido
+        pessoas.add(new Pessoa("Phoebe Buffay", "207302.750-43", "16/02/1967", "Macaiba", "RN"));
+        pessoas.add(new Pessoa("Beth Harmon", "151.285.970-24", "12/05/1979", "Natal", "RN")); //CPF igual ao de Chandler Bing
+        pessoas.add(new Pessoa("Bartholomew Simpson", "999.493.460-02", "28/09/2010", "Natal", "RN")); //menos de 16 anos
+
 
         pessoas.forEach((Pessoa p)->{
-            int atribuir_titulo = 0;
-            p.getAtributos();
-            List<String> atributos = p.getAtributos();
-            List<String> stringsComNumeros = atributos.stream()
-                .filter(s -> s.startsWith("0") || s.startsWith("1") || s.startsWith("2") || s.startsWith("3") || s.startsWith("4") || s.startsWith("5") || s.startsWith("6") || s.startsWith("7") || s.startsWith("8") || s.startsWith("9"))
-                .collect(Collectors.toList());
             
-            List<Integer> posicoes = IntStream.range(0, atributos.size())
-                .filter(i -> stringsComNumeros.contains(atributos.get(i)))
-                .boxed()
-                .collect(Collectors.toList());
-            
-            int posicaoCPF = posicoes.get(0);
-            int posicaoDN = posicoes.get(1);
-            int posicaoNumCasa = posicoes.get(2);
-            int posicaoCEP = posicoes.get(3);
-            int posicaoCidade = posicaoCEP +1;
-            
-            
-            String nome = atributos.stream()
-                .limit(posicaoCPF)
-                .collect(Collectors.joining(" "));
-            
-            int cpf_num = checarCPF(atributos.get(posicaoCPF));
-            if (cpf_num > 0){
-                atribuir_titulo = lista_de_cpfs.adicionar(cpf_num);
+            int idade = checarIdade(p.getDataNascimento());
+            if (idade > 15){
+                
+                List<Character> cpf_padronizado = padronizaCPF(p.getCpf());
+
+                boolean cpf_check = checarCPF(cpf_padronizado);
+
+                if (cpf_check){
+                    String cpf_reconstruido = reconstroiCPF(cpf_padronizado);
+                    boolean achouCpf = eleitores.keySet().stream()
+                        .anyMatch(cpf -> cpf.equals(cpf_reconstruido));
+
+                    if (achouCpf == false){
+                        String titulo = geradorDeTitulo();
+                        int num_zona = selecionaZona(p.getCidade());
+                        eleitores.put(cpf_reconstruido, new Eleitor(p.getNome(), cpf_reconstruido, p.getDataNascimento(), p.getCidade(), p.getEstado(), titulo, num_zona, idade));  
+
+                    } else {
+                        System.out.println("Não foi atribuído título de eleitor para " + p.getNome() + " porque o CPF digitado: " + p.getCpf() + " já se encontra na nossa base de dados.");
+                    }
+
+                } else {
+                    System.out.println("Não foi atribuído título de eleitor para " + p.getNome() + " porque o CPF digitado: " + p.getCpf() + " é inválido");
+                }
+
+                cpf_padronizado.clear();
+                
+            } else {
+                System.out.println(p.getNome()+ " ainda não tem a idade mínima para votar. Poderá se cadastrar daqui a "+ (16-idade) + " anos");
             }
-                    
-            int idade = checarIdade(atributos.get(posicaoDN));
-            
-            //////////unir nome da rua e do bairro
-            String nome_da_rua = unirNomeDaRuaeBairro(atributos, posicaoDN, posicaoNumCasa);
-            String nome_do_bairro = unirNomeDaRuaeBairro(atributos, posicaoNumCasa, posicaoCEP);
-            
-            ///// selecionar Zona Eleitoral
-            int num_zona = selecionaZona(atributos.get(posicaoCidade));
-             
-            
-            System.out.println("Nome de rua:"+ nome_da_rua);
-            System.out.println("Nome do bairro:"+ nome_do_bairro);
-            System.out.println("ZOna:"+ num_zona);
-            
-            
-           // Obs. AGORA SÓ FALTA INSERIR NA CLASSE ELEITORES
-            
-        
-           /* if (atribuir_titulo > 0){
-                String titulo = geradorDeTitulo();
-                eleitores.add(nome, atributos.get(posicaoCPF), atributos.get(posicaoCPF)+1, endereco_rua, endereco_num, endereco_bairro, endereco_cep, cidade, estado);
-                System.out.println("Nome: " + nome + "\nCPF: " + atributos.get(posicaoCPF) + "\nTítulo Eleitoral: " + titulo);
-            }*/
-            
+
         });
+        
+        System.out.println("\nLista de eleitores.\n------------------------------");
+        eleitores.forEach((cpf, eleitor) -> 
+            System.out.println("CPF: " + cpf + eleitor)
+        );
+        
+               //////////////////////////////////////////////////
+        
+        Map <Integer, Set<String>> mapaPorZona = eleitores.values().stream()
+                    .collect(Collectors.groupingBy(   
+                        (Eleitor e)-> e.getZonaEleitoral(),
+                        TreeMap::new,
+                        Collectors.mapping(
+                                (Eleitor e)->e.getNome(), 
+                                Collectors.toSet())
+                    ));
+
+        
+
+        System.out.println("\nImprimindo a lista de eleitores agrupados por Zona Eleitoral usando groupingBy e mapping.");
+        mapaPorZona.forEach((zona, nomes) -> 
+            System.out.println("Eleitores da Zona Eleitoral " + zona + ": "+nomes)
+        );
        
-        
-        lista_de_cpfs.imprimir();
-        
     }
+
     
     /////////////////////////////////////////////////////////////////////////////////////////////////
     
-    public static int checarCPF(String cpf_checar){
+    public static boolean checarCPF(List<Character> cpf_checar){
         
-        List<Character> elementos = cpf_checar.chars() 
-              .mapToObj(c -> (char) c) 
-              .collect(Collectors.toList()); 
-
-        elementos.removeIf(c -> !Character.isDigit(c));
+        List<Character> elementos_principais = cpf_checar.stream()
+                        .limit(9)
+                        .collect(Collectors.toList());
         
-        List<Integer> elementos_num = elementos.stream()
-                .map(Character::getNumericValue)
-                .collect(Collectors.toList());
+          
+        List<Character> elementos_verificadores = cpf_checar.stream()
+                        .skip(9)
+                        .collect(Collectors.toList());
         
-        boolean prim_digit_cpf = checa_primeiro_digito(elementos_num);
-        boolean seg_digit_cpf = checa_segundo_digito(elementos_num);
+        int primeiroVerificador = Character.getNumericValue(elementos_verificadores.get(0));
+        int segundoVerificador = Character.getNumericValue(elementos_verificadores.get(1));
+        
+        boolean prim_digit_cpf = checa_primeiro_digito(elementos_principais, primeiroVerificador);
+        boolean seg_digit_cpf = checa_segundo_digito(elementos_principais, primeiroVerificador, segundoVerificador);
         
         if (prim_digit_cpf && seg_digit_cpf){
-            System.out.println("CPF Válido");
-            int cpf_num = reconstroiCPF(elementos_num);
-            return cpf_num;
+            return true;
         } else {
-            System.out.println("CPF inválido");
-            return -1;
+            return false;
         }
 
 
     }
     
-    public static boolean checa_primeiro_digito(List<Integer>lista){
-                int mult = 10;
+
+    
+    public static boolean checa_primeiro_digito(List<Character>lista, int verificador){
+        int mult = 10;
         List<Integer>lista_multiplica = new ArrayList();
-        for (int num : lista ){
-            lista_multiplica.add(num*mult);
+        
+        for (char valor : lista ){
+            lista_multiplica.add(mult*(Character.getNumericValue(valor)));
             mult--;
         }
         
-        List<Integer>lista_multiplica_final = lista_multiplica.stream()
-                .limit(9)
-                .collect(Collectors.toList());
-        
-        List<Integer> digitos_verificadores = lista.stream()
-                .skip(lista.size() - 2)
-                .collect(Collectors.toList());
-        
-        int soma = lista_multiplica_final.stream()
+        int soma = lista_multiplica.stream()
                 .reduce(0, Integer::sum);
         
         int resto = soma % 11;
         
-        if ((resto == 0 || resto == 1) && digitos_verificadores.get(0) == 0){
+        if ((resto == 0 || resto == 1) && verificador == 0){
             return true;
-        } else if ((resto != 0 && resto != 1) && (11 - resto == digitos_verificadores.get(0)) ){
+        } else if ((resto != 0 && resto != 1) && (11 - resto == verificador) ){
             return true;
         } else {
             return false;
         }
     }
     
-    public static boolean checa_segundo_digito(List<Integer>lista){
+    public static boolean checa_segundo_digito(List<Character>lista, int num , int verificador){
         int mult = 11;
         List<Integer>lista_multiplica = new ArrayList();
-        for (int num : lista ){
-            lista_multiplica.add(num*mult);
+        
+        for (char valor : lista ){
+            lista_multiplica.add(mult*(Character.getNumericValue(valor)));
             mult--;
         }
         
-        List<Integer>lista_multiplica_final = lista_multiplica.stream()
-                .limit(10)
-                .collect(Collectors.toList());
+        lista_multiplica.add(num*2);
         
-        List<Integer> digitos_verificadores = lista.stream()
-                .skip(lista.size() - 1)
-                .collect(Collectors.toList());
-        
-        int soma = lista_multiplica_final.stream()
+        int soma = lista_multiplica.stream()
                 .reduce(0, Integer::sum);
         
         int resto = soma % 11;
                 
-        if ((resto == 0 || resto == 1) && digitos_verificadores.get(0) == 0){
+        if ((resto == 0 || resto == 1) && verificador == 0){
             return true;
-        } else if ((resto != 0 && resto != 1) && (11 - resto == digitos_verificadores.get(0)) ){
+        } else if ((resto != 0 && resto != 1) && (11 - resto == verificador) ){
             return true;
         } else {
             return false;
@@ -187,13 +190,37 @@ public class CadastroEleitoral {
         
     }
     
-    public static int reconstroiCPF(List<Integer>lista){
+    public static String reconstroiCPF(List<Character>lista){
+        String cpf_primeiraParte = lista.stream()
+                .map(String::valueOf)
+                .limit(3)
+                .collect(Collectors.joining());
         
-        int cpf_num = lista.stream()
+        String cpf_segundaParte = lista.stream()
+                .map(String::valueOf)
+                .limit(6)
+                .skip(3)
+                .collect(Collectors.joining());
+        
+        String cpf_terceiraParte = lista.stream()
+                .map(String::valueOf)
                 .limit(9)
-                .reduce(0, (acc, digit) -> acc * 10 + digit);
+                .skip(6)
+                .collect(Collectors.joining());
+        
+        String cpf_verificadores = lista.stream()
+                .map(String::valueOf)
+                .skip(9)
+                .collect(Collectors.joining());
+        
+        String concatenacao1 = Stream.of(cpf_primeiraParte, cpf_segundaParte, cpf_terceiraParte)
+                .collect(Collectors.joining("."));
+        
+        String concatenacao_final = Stream.of(concatenacao1, cpf_verificadores)
+                .collect(Collectors.joining("-"));
+        
 
-        return cpf_num;
+        return concatenacao_final;
         
     }
     
@@ -212,6 +239,8 @@ public class CadastroEleitoral {
         titulo_completo.add(parte2str);
         titulo_completo.add(parte3str);
         
+        //colocar zeros se a parte gerada do título de eleitor for menor que 1000
+        
         int cont = 0;
         for (String parte : titulo_completo){
             int tam = parte.length();
@@ -223,8 +252,10 @@ public class CadastroEleitoral {
             }
             cont++;
         }
-                    
-        String titulo = titulo_completo.get(0) + " " + titulo_completo.get(1) + " " + titulo_completo.get(2);
+
+        String titulo = Stream.of(titulo_completo.get(0), titulo_completo.get(1), titulo_completo.get(2))
+                .collect(Collectors.joining(" "));
+        
         
         return titulo;
         
@@ -235,43 +266,36 @@ public class CadastroEleitoral {
         LocalDate dataNascimento = LocalDate.parse(dataString, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         LocalDate dataAtual = LocalDate.now();
         Period periodo = Period.between(dataNascimento, dataAtual);
-        int idade = periodo.getYears(); // Obter idade em anos
+        int idade = periodo.getYears();
         
         return idade;
         
 
     }
     
-    public static String unirNomeDaRuaeBairro(List<String>lista, int posicao1, int posicao2){
-                        
-            int posicao_inicio_rua = posicao1 + 1;
-            int tam_NomeRua = posicao2 - posicao_inicio_rua;
-            
-            List<String> nome_rua = new ArrayList<>();
-            while (tam_NomeRua > 0){
-                nome_rua.add(lista.get(posicao_inicio_rua));
-                posicao_inicio_rua++;
-                tam_NomeRua--;
-            }
-            Stream<String> streamStrings = nome_rua.stream();
-            String nome_unido = streamStrings
-                .collect(Collectors.joining(" "));
-            
-            return nome_unido;
-    }
     
     public static int selecionaZona(String cidade){
         
         Map<String, Integer> mapCidades = new HashMap<>();
 
-        // Popular o Map com chave e valor int
         mapCidades.put("Natal", 10);
         mapCidades.put("Parnamirim", 20);
         mapCidades.put("Macaiba", 30);
-        
-        Integer num = mapCidades.get(cidade);
-        return num;
+    
+        return mapCidades.get(cidade);
                
+    }
+    
+    public static List<Character> padronizaCPF(String cpf_padronizar){
+        List<Character> elementos = cpf_padronizar.chars() 
+              .mapToObj(c -> (char) c) 
+              .collect(Collectors.toList()); 
+
+        elementos.removeIf(c -> !Character.isDigit(c));
+
+        return elementos;
+        
+        
     }
     
 }

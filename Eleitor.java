@@ -12,11 +12,32 @@ public class Eleitor extends Pessoa {
     
     private int zonaEleitoral;
     private String titulo;
+    int idade;
 
-    public Eleitor(String nome, String cpf, String dataNascimento, String endereco_rua, String endereco_num, String endereco_bairro, String endereco_cep, String cidade, String estado) {
-        super(nome, cpf, dataNascimento, endereco_rua, endereco_num, endereco_bairro, endereco_cep, cidade, estado);
-        this.zonaEleitoral = 0;
-        this.titulo = "";
+    public Eleitor(String nome, String cpf, String dataNascimento, String cidade, String estado, String titulo, int zonaEleitoral, int idade) {
+        super(nome, cpf, dataNascimento, cidade, estado);
+        this.zonaEleitoral = zonaEleitoral;
+        this.titulo = titulo;
+        this.idade = idade;
+    }
+
+    @Override
+    public String toString() {
+        return  "\nEleitor: " + this.getNome() +
+                "\nTítulo de Eleitor: "+titulo+
+                "\nIdade: "+ idade +
+                "\nCidade: "+this.getCidade()+ "-"+this.getEstado()+
+                "\nZona Eleitoral: "+zonaEleitoral+
+                "\n---------------------------------------------------";
+
+    }
+
+    public int getIdade() {
+        return idade;
+    }
+
+    public void setIdade(int idade) {
+        this.idade = idade;
     }
 
     public int getZonaEleitoral() {

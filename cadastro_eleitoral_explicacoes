@@ -1,0 +1,100 @@
+Comprovante de submissão Nº 3218198.
+
+
+Explicação do código:
+
+ 
+
+Objetivo:
+
+Cadastrar eleitores e alocar em suas respectivas Zonas Eleitorais.
+
+ 
+
+Foi criada uma Classe Pessoa e uma Classe Eleitor que extends Pessoa
+
+ 
+
+Como pede a questão, na Classe Eleitor, o atributo 'private int zonaEleitoral' tem valores em comum entre diferentes objetos  da Classe ELeitor pois mais de um eleitor pode pertencer à mesma Zona Eleitoral.
+
+ 
+
+São fornecidas 10 pessoas na lista 'List<Pessoa> pessoas' com o comando 'pessoas.add(new Pessoa())' e o pipeline segue a seguinte sequência:
+
+ 
+
+1. É iniciado um '.forEach((Pessoa p)' para executar as seguintes operações em cada pessoa da 'List<Pessoa> pessoas':
+
+ 
+
+1.1 A idade da 'Pessoa p' é checada pela função checarIdade() que recebe a data de nascimento dela e retorna a idade. Se a pessoa tiver 16 anos ou mais, segue para os passos seguintes.
+
+ 
+
+1.2 Como os CPFs são digitados em diferentes formatos (com ponto, sem ponto, contraço, sen traço), é usada a função: 'padronizaCPF()' para padronizar o CPF deixando apenas os números, em formato de uma lista de Character onde cada número é um Character. Essa função usa '.mapToObj' e '.collect(Collectors.toList())' retornando uma List de Character que será a 'List<Character> cpf_padronizado'.
+
+ 
+
+1.3 Os CPFs são checados se são válidos pela função 'checarCPF()'. Essa função recebe a List retornada no passo anterior e usando '.limit()' e '.skip()' cria duas Lists de Character separadas: 'List<Character> elementos_principais' e 'List<Character> elementos_verificadores'. Essa mesma função chama as funções 'checa_primeiro_digito()' e 'checa_segundo_digito()' que usam '.reduce' pra fazer as somas necessárias para fazer a checagem de validade ou não do CPF.
+Obs. Uma das pessoas inseridas na 'List<Pessoa> pessoas' tem um CPF inválido para testar essa função
+
+ 
+
+ 
+
+1.4 Se o CPF for válido, é reconstruído usando a função 'reconstroiCPF()' que usa '.limit()' e '.skip()' para separar os números de 3 em 3 e os 2 finais e depois 'Collectors.joining()' para unir no formato '677.980.830-06'
+ 
+
+1.5 Com o CPF reconstruído, é checado se a 'Pessoa p' está fornecendo um CPF de um eleitor já cadastrado. Isso é feito usando '.anyMatch' no Map<String, Eleitor> 
+
+Obs. Uma das pessoas inseridas na 'List<Pessoa> pessoas' está fornecendo um CPF igual a outra pessoa para testar essa função
+
+ 
+
+1.6 Se o CPF fornecido por 'Pessoa p' não está no cadastro de eleitores, é chamada a função 'geradorDeTitulo()' para gerar um número de título de eleitor para essa pessoa. Nessa função é usado um '.collect(Collectors.joining(" ")' para que o número fique no formato '3715 3143 7048'.
+ 
+
+1.7 É chamada a função selecionaZona() passando o nome da cidade da Pessoa e é selecionada a Zona Eleitoral da Pessoa de acordo com a cidade que foi passada:
+
+- Zona ELeitoral 10 se for Natal; 
+
+- Zona ELeitoral 20 se for Parnamirim; 
+
+- Zona ELeitoral 30 se for Macaiba;
+
+ 
+
+1.8 É criado um novo Eleitor e os valores de 'Pessoa p' junto com os valores gerados são inseridos no Map<String, Eleitor> eleitores onde o CPF é a chave e os outros parâmetros são os valores.
+
+ 
+
+Sai do forEach.
+
+ 
+
+2. Os eleitores são impressos usando um '.forEach' e um toString sobrescrito na Classe Eleitor
+
+ 
+
+3. É criado um TreeMap que agrupa os nomes dos eleitores por zona eleitoral usando um Collectors.groupingBy e um Collectors.mapping
+
+ 
+
+4. É impressa a lista de eleitores agrupados por Zona Eleitoral usando um forEach.
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
